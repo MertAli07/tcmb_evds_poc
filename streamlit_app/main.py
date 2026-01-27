@@ -3,6 +3,7 @@ import requests
 import json
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 import time
 from io import BytesIO
 from PIL import Image
@@ -16,9 +17,13 @@ config = Config(
 client_runtime = boto3.client("bedrock-agent-runtime", region_name="us-east-1", config=config)
 
 SESSION_FILE = "session_info.txt"
+SESSION_STATE_KEY = "execution_id"
 
 
 def read_execution_id():
+    execution_id = st.session_state.get(SESSION_STATE_KEY)
+    if execution_id:
+        return execution_id
     try:
         with open(SESSION_FILE, "r") as f:
             execution_id = f.read().strip()
@@ -28,8 +33,12 @@ def read_execution_id():
 
 
 def write_execution_id(execution_id):
-    with open(SESSION_FILE, "w") as f:
-        f.write(execution_id or "")
+    st.session_state[SESSION_STATE_KEY] = execution_id or ""
+    try:
+        with open(SESSION_FILE, "w") as f:
+            f.write(execution_id or "")
+    except OSError:
+        pass
 
 def display_s3_image(s3_uri: str, region: str = "us-east-1"):
     """
@@ -136,40 +145,51 @@ if user_input:
 
         execution_id = read_execution_id()
 
+        flow_inputs_existing = [
+            {
+                "content": {"document": user_input},
+                "nodeName": "AgentsNode_1",
+                "nodeInputName": "agentInputText",
+            }
+        ]
+        flow_inputs_new = [
+            {
+                "content": {"document": user_input},
+                "nodeName": "FlowInputNode",
+                "nodeOutputName": "document",
+            }
+        ]
+
         if execution_id:
             print()
             print("CONTINUE EXISTING FLOW")
             print()
             # Continue existing flow
-            inputs = [
-                {
-                    "content": {"document": user_input},
-                    "nodeName": "AgentsNode_1",
-                    "nodeInputName": "agentInputText"
-                }
-            ]
-            response = client_runtime.invoke_flow(
-                flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
-                flowAliasIdentifier="EB7Q8SNTQR",
-                executionId=execution_id,
-                inputs=inputs,
-            )
-        else:
+            try:
+                response = client_runtime.invoke_flow(
+                    flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
+                    flowAliasIdentifier="EB7Q8SNTQR",
+                    executionId=execution_id,
+                    inputs=flow_inputs_existing,
+                )
+            except ClientError as exc:
+                error_code = exc.response.get("Error", {}).get("Code", "")
+                error_message = exc.response.get("Error", {}).get("Message", "")
+                if error_code == "validationException" and "session context" in error_message.lower():
+                    write_execution_id("")
+                    execution_id = None
+                else:
+                    raise
+
+        if not execution_id:
             print()
             print("NEW FLOW")
             print()
             # Start new flow
-            inputs = [
-                {
-                    "content": {"document": user_input},
-                    "nodeName": "FlowInputNode",
-                    "nodeOutputName": "document",
-                }
-            ]
             response = client_runtime.invoke_flow(
                 flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
                 flowAliasIdentifier="EB7Q8SNTQR",
-                inputs=inputs,
+                inputs=flow_inputs_new,
             )
             execution_id = response["executionId"]
             write_execution_id(execution_id)
