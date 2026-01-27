@@ -18,26 +18,53 @@ client_runtime = boto3.client("bedrock-agent-runtime", region_name="us-east-1", 
 
 SESSION_FILE = "session_info.txt"
 SESSION_STATE_KEY = "execution_id"
+S3_SESSION_URL = "https://tcmb-poc-evds.s3.us-east-1.amazonaws.com/session_info.txt"
+
+
+def parse_s3_http_url(url: str):
+    if not url:
+        return None, None
+    prefix = "https://"
+    if not url.startswith(prefix):
+        return None, None
+    host_and_path = url[len(prefix):]
+    if ".s3." not in host_and_path:
+        return None, None
+    bucket, path = host_and_path.split(".s3.", 1)
+    key = path.split("/", 1)[-1]
+    return bucket, key
 
 
 def read_execution_id():
     execution_id = st.session_state.get(SESSION_STATE_KEY)
     if execution_id:
         return execution_id
+    bucket, key = parse_s3_http_url(S3_SESSION_URL)
+    if not bucket or not key:
+        return None
     try:
-        with open(SESSION_FILE, "r") as f:
-            execution_id = f.read().strip()
-            return execution_id if execution_id else None
-    except FileNotFoundError:
+        s3 = boto3.client("s3", region_name="us-east-1")
+        response = s3.get_object(Bucket=bucket, Key=key)
+        execution_id = response["Body"].read().decode("utf-8").strip()
+        return execution_id if execution_id else None
+    except ClientError:
         return None
 
 
 def write_execution_id(execution_id):
     st.session_state[SESSION_STATE_KEY] = execution_id or ""
+    bucket, key = parse_s3_http_url(S3_SESSION_URL)
+    if not bucket or not key:
+        return
     try:
-        with open(SESSION_FILE, "w") as f:
-            f.write(execution_id or "")
-    except OSError:
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=(execution_id or "").encode("utf-8"),
+            ContentType="text/plain",
+        )
+    except ClientError:
         pass
 
 def display_s3_image(s3_uri: str, region: str = "us-east-1"):
