@@ -1,0 +1,1 @@
+Türkiye Cumhuriyet Merkez Bankası (TCMB) tarafından yayımlanan ABD Doları (USD) günlük döviz alış kuru bilgisini içerir. Bu seri, piyasadaki dolar alım (alış) işlemlerinde referans alınan resmi fiyattır. Dolar birikimlerinin TL karşılığını hesaplamak için idealdir.

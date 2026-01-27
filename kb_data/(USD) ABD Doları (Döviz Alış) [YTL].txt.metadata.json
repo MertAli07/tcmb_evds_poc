@@ -1,0 +1,9 @@
+{
+    "metadataAttributes": {
+      "title": "(USD) ABD Doları (Döviz Alış) [YTL]",
+      "series_code": "TP.DK.USD.A.YTL",
+      "currency": "USD",
+      "type": "Buying-Historical",
+      "period": "YTL"
+    }
+}

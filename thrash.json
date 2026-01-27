@@ -1,0 +1,441 @@
+{
+    "raw_data": [
+      {
+        "Tarih": "27-01-2023",
+        "YEARWEEK": "2023-4",
+        "TP_DK_USD_A": 18.78106,
+        "UNIXTIME": {
+          "$numberLong": "1674766800"
+        }
+      },
+      {
+        "Tarih": "03-02-2023",
+        "YEARWEEK": "2023-5",
+        "TP_DK_USD_A": 18.78832,
+        "UNIXTIME": {
+          "$numberLong": "1675371600"
+        }
+      },
+      {
+        "Tarih": "10-02-2023",
+        "YEARWEEK": "2023-6",
+        "TP_DK_USD_A": 18.80672,
+        "UNIXTIME": {
+          "$numberLong": "1675976400"
+        }
+      },
+      {
+        "Tarih": "17-02-2023",
+        "YEARWEEK": "2023-7",
+        "TP_DK_USD_A": 18.82246,
+        "UNIXTIME": {
+          "$numberLong": "1676581200"
+        }
+      },
+      {
+        "Tarih": "24-02-2023",
+        "YEARWEEK": "2023-8",
+        "TP_DK_USD_A": 18.84632,
+        "UNIXTIME": {
+          "$numberLong": "1677186000"
+        }
+      },
+      {
+        "Tarih": "03-03-2023",
+        "YEARWEEK": "2023-9",
+        "TP_DK_USD_A": 18.86336,
+        "UNIXTIME": {
+          "$numberLong": "1677790800"
+        }
+      },
+      {
+        "Tarih": "10-03-2023",
+        "YEARWEEK": "2023-10",
+        "TP_DK_USD_A": 18.8945,
+        "UNIXTIME": {
+          "$numberLong": "1678395600"
+        }
+      },
+      {
+        "Tarih": "17-03-2023",
+        "YEARWEEK": "2023-11",
+        "TP_DK_USD_A": 18.95442,
+        "UNIXTIME": {
+          "$numberLong": "1679000400"
+        }
+      },
+      {
+        "Tarih": "24-03-2023",
+        "YEARWEEK": "2023-12",
+        "TP_DK_USD_A": 19.00212,
+        "UNIXTIME": {
+          "$numberLong": "1679605200"
+        }
+      },
+      {
+        "Tarih": "31-03-2023",
+        "YEARWEEK": "2023-13",
+        "TP_DK_USD_A": 19.0884,
+        "UNIXTIME": {
+          "$numberLong": "1680210000"
+        }
+      },
+      {
+        "Tarih": "07-04-2023",
+        "YEARWEEK": "2023-14",
+        "TP_DK_USD_A": 19.19896,
+        "UNIXTIME": {
+          "$numberLong": "1680814800"
+        }
+      },
+      {
+        "Tarih": "14-04-2023",
+        "YEARWEEK": "2023-15",
+        "TP_DK_USD_A": 19.26572,
+        "UNIXTIME": {
+          "$numberLong": "1681419600"
+        }
+      },
+      {
+        "Tarih": "21-04-2023",
+        "YEARWEEK": "2023-16",
+        "TP_DK_USD_A": 19.36165,
+        "UNIXTIME": {
+          "$numberLong": "1682024400"
+        }
+      },
+      {
+        "Tarih": "28-04-2023",
+        "YEARWEEK": "2023-17",
+        "TP_DK_USD_A": 19.39456,
+        "UNIXTIME": {
+          "$numberLong": "1682629200"
+        }
+      },
+      {
+        "Tarih": "05-05-2023",
+        "YEARWEEK": "2023-18",
+        "TP_DK_USD_A": 19.446075,
+        "UNIXTIME": {
+          "$numberLong": "1683234000"
+        }
+      },
+      {
+        "Tarih": "12-05-2023",
+        "YEARWEEK": "2023-19",
+        "TP_DK_USD_A": 19.50032,
+        "UNIXTIME": {
+          "$numberLong": "1683838800"
+        }
+      },
+      {
+        "Tarih": "19-05-2023",
+        "YEARWEEK": "2023-20",
+        "TP_DK_USD_A": 19.654275,
+        "UNIXTIME": {
+          "$numberLong": "1684443600"
+        }
+      },
+      {
+        "Tarih": "26-05-2023",
+        "YEARWEEK": "2023-21",
+        "TP_DK_USD_A": 19.83102,
+        "UNIXTIME": {
+          "$numberLong": "1685048400"
+        }
+      },
+      {
+        "Tarih": "02-06-2023",
+        "YEARWEEK": "2023-22",
+        "TP_DK_USD_A": 20.3446,
+        "UNIXTIME": {
+          "$numberLong": "1685653200"
+        }
+      },
+      {
+        "Tarih": "09-06-2023",
+        "YEARWEEK": "2023-23",
+        "TP_DK_USD_A": 21.95798,
+        "UNIXTIME": {
+          "$numberLong": "1686258000"
+        }
+      },
+      {
+        "Tarih": "16-06-2023",
+        "YEARWEEK": "2023-24",
+        "TP_DK_USD_A": 23.58392,
+        "UNIXTIME": {
+          "$numberLong": "1686862800"
+        }
+      },
+      {
+        "Tarih": "23-06-2023",
+        "YEARWEEK": "2023-25",
+        "TP_DK_USD_A": 23.60522,
+        "UNIXTIME": {
+          "$numberLong": "1687467600"
+        }
+      },
+      {
+        "Tarih": "30-06-2023",
+        "YEARWEEK": "2023-26",
+        "TP_DK_USD_A": 25.5368,
+        "UNIXTIME": {
+          "$numberLong": "1688072400"
+        }
+      },
+      {
+        "Tarih": "07-07-2023",
+        "YEARWEEK": "2023-27",
+        "TP_DK_USD_A": 25.99008,
+        "UNIXTIME": {
+          "$numberLong": "1688677200"
+        }
+      },
+      {
+        "Tarih": "14-07-2023",
+        "YEARWEEK": "2023-28",
+        "TP_DK_USD_A": 26.0792,
+        "UNIXTIME": {
+          "$numberLong": "1689282000"
+        }
+      },
+      {
+        "Tarih": "21-07-2023",
+        "YEARWEEK": "2023-29",
+        "TP_DK_USD_A": 26.59814,
+        "UNIXTIME": {
+          "$numberLong": "1689886800"
+        }
+      },
+      {
+        "Tarih": "28-07-2023",
+        "YEARWEEK": "2023-30",
+        "TP_DK_USD_A": 26.9202,
+        "UNIXTIME": {
+          "$numberLong": "1690491600"
+        }
+      },
+      {
+        "Tarih": "04-08-2023",
+        "YEARWEEK": "2023-31",
+        "TP_DK_USD_A": 26.93852,
+        "UNIXTIME": {
+          "$numberLong": "1691096400"
+        }
+      },
+      {
+        "Tarih": "11-08-2023",
+        "YEARWEEK": "2023-32",
+        "TP_DK_USD_A": 26.97772,
+        "UNIXTIME": {
+          "$numberLong": "1691701200"
+        }
+      },
+      {
+        "Tarih": "18-08-2023",
+        "YEARWEEK": "2023-33",
+        "TP_DK_USD_A": 27.02768,
+        "UNIXTIME": {
+          "$numberLong": "1692306000"
+        }
+      },
+      {
+        "Tarih": "25-08-2023",
+        "YEARWEEK": "2023-34",
+        "TP_DK_USD_A": 27.12462,
+        "UNIXTIME": {
+          "$numberLong": "1692910800"
+        }
+      },
+      {
+        "Tarih": "01-09-2023",
+        "YEARWEEK": "2023-35",
+        "TP_DK_USD_A": 26.5438,
+        "UNIXTIME": {
+          "$numberLong": "1693515600"
+        }
+      },
+      {
+        "Tarih": "08-09-2023",
+        "YEARWEEK": "2023-36",
+        "TP_DK_USD_A": 26.74974,
+        "UNIXTIME": {
+          "$numberLong": "1694120400"
+        }
+      },
+      {
+        "Tarih": "15-09-2023",
+        "YEARWEEK": "2023-37",
+        "TP_DK_USD_A": 26.86352,
+        "UNIXTIME": {
+          "$numberLong": "1694725200"
+        }
+      },
+      {
+        "Tarih": "22-09-2023",
+        "YEARWEEK": "2023-38",
+        "TP_DK_USD_A": 26.97964,
+        "UNIXTIME": {
+          "$numberLong": "1695330000"
+        }
+      },
+      {
+        "Tarih": "29-09-2023",
+        "YEARWEEK": "2023-39",
+        "TP_DK_USD_A": 27.2258,
+        "UNIXTIME": {
+          "$numberLong": "1695934800"
+        }
+      },
+      {
+        "Tarih": "06-10-2023",
+        "YEARWEEK": "2023-40",
+        "TP_DK_USD_A": 27.45818,
+        "UNIXTIME": {
+          "$numberLong": "1696539600"
+        }
+      },
+      {
+        "Tarih": "13-10-2023",
+        "YEARWEEK": "2023-41",
+        "TP_DK_USD_A": 27.65802,
+        "UNIXTIME": {
+          "$numberLong": "1697144400"
+        }
+      },
+      {
+        "Tarih": "20-10-2023",
+        "YEARWEEK": "2023-42",
+        "TP_DK_USD_A": 27.876600000000003,
+        "UNIXTIME": {
+          "$numberLong": "1697749200"
+        }
+      },
+      {
+        "Tarih": "27-10-2023",
+        "YEARWEEK": "2023-43",
+        "TP_DK_USD_A": 28.04372,
+        "UNIXTIME": {
+          "$numberLong": "1698354000"
+        }
+      },
+      {
+        "Tarih": "03-11-2023",
+        "YEARWEEK": "2023-44",
+        "TP_DK_USD_A": 28.23072,
+        "UNIXTIME": {
+          "$numberLong": "1698958800"
+        }
+      },
+      {
+        "Tarih": "10-11-2023",
+        "YEARWEEK": "2023-45",
+        "TP_DK_USD_A": 28.42484,
+        "UNIXTIME": {
+          "$numberLong": "1699563600"
+        }
+      },
+      {
+        "Tarih": "17-11-2023",
+        "YEARWEEK": "2023-46",
+        "TP_DK_USD_A": 28.5759,
+        "UNIXTIME": {
+          "$numberLong": "1700168400"
+        }
+      },
+      {
+        "Tarih": "24-11-2023",
+        "YEARWEEK": "2023-47",
+        "TP_DK_USD_A": 28.73042,
+        "UNIXTIME": {
+          "$numberLong": "1700773200"
+        }
+      },
+      {
+        "Tarih": "01-12-2023",
+        "YEARWEEK": "2023-48",
+        "TP_DK_USD_A": 28.844900000000003,
+        "UNIXTIME": {
+          "$numberLong": "1701378000"
+        }
+      },
+      {
+        "Tarih": "08-12-2023",
+        "YEARWEEK": "2023-49",
+        "TP_DK_USD_A": 28.86612,
+        "UNIXTIME": {
+          "$numberLong": "1701982800"
+        }
+      },
+      {
+        "Tarih": "15-12-2023",
+        "YEARWEEK": "2023-50",
+        "TP_DK_USD_A": 28.96008,
+        "UNIXTIME": {
+          "$numberLong": "1702587600"
+        }
+      },
+      {
+        "Tarih": "22-12-2023",
+        "YEARWEEK": "2023-51",
+        "TP_DK_USD_A": 29.03546,
+        "UNIXTIME": {
+          "$numberLong": "1703192400"
+        }
+      },
+      {
+        "Tarih": "29-12-2023",
+        "YEARWEEK": "2023-52",
+        "TP_DK_USD_A": 29.26892,
+        "UNIXTIME": {
+          "$numberLong": "1703797200"
+        }
+      },
+      {
+        "Tarih": "05-01-2024",
+        "YEARWEEK": "2024-1",
+        "TP_DK_USD_A": 29.647575,
+        "UNIXTIME": {
+          "$numberLong": "1704402000"
+        }
+      },
+      {
+        "Tarih": "12-01-2024",
+        "YEARWEEK": "2024-2",
+        "TP_DK_USD_A": 29.87192,
+        "UNIXTIME": {
+          "$numberLong": "1705006800"
+        }
+      },
+      {
+        "Tarih": "19-01-2024",
+        "YEARWEEK": "2024-3",
+        "TP_DK_USD_A": 30.053,
+        "UNIXTIME": {
+          "$numberLong": "1705611600"
+        }
+      },
+      {
+        "Tarih": "26-01-2024",
+        "YEARWEEK": "2024-4",
+        "TP_DK_USD_A": 30.190800000000003,
+        "UNIXTIME": {
+          "$numberLong": "1706216400"
+        }
+      }
+    ],
+    "series": "TP.DK.USD.A",
+    "statistics": {
+      "TP_DK_USD_A": {
+        "std": 4.253010355017791,
+        "25%": 19.39456,
+        "min": 18.78106,
+        "max": 30.190800000000003,
+        "mean": 24.477068207547173,
+        "75%": 28.04372,
+        "count": 53,
+        "50%": 26.59814
+      }
+    }
+  }

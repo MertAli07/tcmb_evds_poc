@@ -1,0 +1,1 @@
+Türkiye Cumhuriyet Merkez Bankası (TCMB) tarafından belirlenen ABD Doları (USD) günlük döviz satış kuru bilgisini içerir. Bu seri, bankaların veya kurumların dolar satışı yaparken referans aldığı resmi kur verisidir. Günlük piyasa takibi ve satış işlemlerinin hesaplanmasında kullanılır.
