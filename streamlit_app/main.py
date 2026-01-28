@@ -2,8 +2,10 @@ import streamlit as st
 import requests
 import json
 import boto3
+import os
+import uuid
 from botocore.config import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EventStreamError
 import time
 from io import BytesIO
 from PIL import Image
@@ -16,56 +18,97 @@ config = Config(
 )
 client_runtime = boto3.client("bedrock-agent-runtime", region_name="us-east-1", config=config)
 
-SESSION_FILE = "session_info.txt"
 SESSION_STATE_KEY = "execution_id"
-S3_SESSION_URL = "https://tcmb-poc-evds.s3.us-east-1.amazonaws.com/session_info.txt"
+SESSION_LOG_KEY = "session_log"
+SESSION_USER_KEY = "session_user_id"
 
 
-def parse_s3_http_url(url: str):
-    if not url:
-        return None, None
-    prefix = "https://"
-    if not url.startswith(prefix):
-        return None, None
-    host_and_path = url[len(prefix):]
-    if ".s3." not in host_and_path:
-        return None, None
-    bucket, path = host_and_path.split(".s3.", 1)
-    key = path.split("/", 1)[-1]
-    return bucket, key
+def resolve_ddb_table_name():
+    for key in ("DDB_TABLE_NAME", "SESSION_TABLE_NAME", "SESSION_LOG_TABLE"):
+        try:
+            value = st.secrets.get(key)
+        except Exception:
+            value = None
+        if not value:
+            value = os.environ.get(key)
+        if value:
+            return value
+    return None
+
+
+def get_ddb_table():
+    table_name = resolve_ddb_table_name()
+    if not table_name:
+        return None
+    region = os.environ.get("AWS_REGION", "us-east-1")
+    dynamodb = boto3.resource("dynamodb", region_name=region)
+    return dynamodb.Table(table_name)
 
 
 def read_execution_id():
     execution_id = st.session_state.get(SESSION_STATE_KEY)
-    if execution_id:
-        return execution_id
-    bucket, key = parse_s3_http_url(S3_SESSION_URL)
-    if not bucket or not key:
-        return None
-    try:
-        s3 = boto3.client("s3", region_name="us-east-1")
-        response = s3.get_object(Bucket=bucket, Key=key)
-        execution_id = response["Body"].read().decode("utf-8").strip()
-        return execution_id if execution_id else None
-    except ClientError:
-        return None
+    return execution_id if execution_id else None
 
 
 def write_execution_id(execution_id):
     st.session_state[SESSION_STATE_KEY] = execution_id or ""
-    bucket, key = parse_s3_http_url(S3_SESSION_URL)
-    if not bucket or not key:
+
+
+def get_user_id():
+    user_id = st.session_state.get(SESSION_USER_KEY)
+    if not user_id:
+        user_id = str(uuid.uuid4())
+        st.session_state[SESSION_USER_KEY] = user_id
+    return user_id
+
+
+def start_session_log(user_query, status="IN_PROGRESS", last_node="analyzer"):
+    table = get_ddb_table()
+    if not table:
+        return None
+    timestamp = int(time.time())
+    ttl = timestamp + 30 * 24 * 60 * 60
+    item = {
+        "userId": get_user_id(),
+        "timestamp": timestamp,
+        "status": status,
+        "last_node": last_node,
+        "user_query": user_query,
+        "ttl": ttl,
+    }
+    try:
+        table.put_item(Item=item)
+        st.session_state[SESSION_LOG_KEY] = {
+            "userId": item["userId"],
+            "timestamp": timestamp,
+            "ttl": ttl,
+        }
+        return item
+    except ClientError:
+        return None
+
+
+def update_session_log(status, last_node):
+    table = get_ddb_table()
+    log_state = st.session_state.get(SESSION_LOG_KEY)
+    if not table or not log_state:
         return
     try:
-        s3 = boto3.client("s3", region_name="us-east-1")
-        s3.put_object(
-            Bucket=bucket,
-            Key=key,
-            Body=(execution_id or "").encode("utf-8"),
-            ContentType="text/plain",
+        table.update_item(
+            Key={
+                "userId": log_state["userId"],
+                "timestamp": log_state["timestamp"],
+            },
+            UpdateExpression="SET #status = :status, last_node = :last_node, ttl = :ttl",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={
+                ":status": status,
+                ":last_node": last_node,
+                ":ttl": log_state["ttl"],
+            },
         )
     except ClientError:
-        pass
+        return
 
 def display_s3_image(s3_uri: str, region: str = "us-east-1"):
     """
@@ -169,6 +212,7 @@ if user_input:
 
     with st.spinner("Generating response..."):
         payload = user_input
+        start_session_log(user_input, status="IN_PROGRESS", last_node="analyzer")
 
         execution_id = read_execution_id()
 
@@ -206,6 +250,7 @@ if user_input:
                     write_execution_id("")
                     execution_id = None
                 else:
+                    update_session_log("FAILED", "analyzer")
                     raise
 
         if not execution_id:
@@ -213,13 +258,17 @@ if user_input:
             print("NEW FLOW")
             print()
             # Start new flow
-            response = client_runtime.invoke_flow(
-                flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
-                flowAliasIdentifier="EB7Q8SNTQR",
-                inputs=flow_inputs_new,
-            )
-            execution_id = response["executionId"]
-            write_execution_id(execution_id)
+            try:
+                response = client_runtime.invoke_flow(
+                    flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
+                    flowAliasIdentifier="EB7Q8SNTQR",
+                    inputs=flow_inputs_new,
+                )
+                execution_id = response["executionId"]
+                write_execution_id(execution_id)
+            except ClientError:
+                update_session_log("FAILED", "analyzer")
+                raise
 
         output_lines = []
 
@@ -229,16 +278,36 @@ if user_input:
 
         output_lines = []
 
-        for event in response.get("responseStream", []):
-            if "flowOutputEvent" in event:
-                output_lines.append(event["flowOutputEvent"]["content"]["document"])
-            elif "flowMultiTurnInputRequestEvent" in event:
+        completion_status = None
+        try:
+            for event in response.get("responseStream", []):
+                if "flowOutputEvent" in event:
+                    output_lines.append(event["flowOutputEvent"]["content"]["document"])
+                elif "flowMultiTurnInputRequestEvent" in event:
+                    output_lines.append(
+                        event["flowMultiTurnInputRequestEvent"]["content"]["document"]
+                    )
+                elif "flowCompletionEvent" in event:
+                    if event["flowCompletionEvent"]["completionReason"] == "SUCCESS":
+                        write_execution_id("")  # clear file on completion
+                        completion_status = "COMPLETED"
+        except EventStreamError as exc:
+            error_code = ""
+            error_message = ""
+            if hasattr(exc, "response"):
+                error_code = exc.response.get("Error", {}).get("Code", "")
+                error_message = exc.response.get("Error", {}).get("Message", "")
+            if error_code or error_message:
                 output_lines.append(
-                    event["flowMultiTurnInputRequestEvent"]["content"]["document"]
+                    f"Bedrock akış hatası: {error_code} {error_message}".strip()
                 )
-            elif "flowCompletionEvent" in event:
-                if event["flowCompletionEvent"]["completionReason"] == "SUCCESS":
-                    write_execution_id("")  # clear file on completion
+            else:
+                output_lines.append("Bedrock akış hatası: Yanıt alınamadı.")
+            write_execution_id("")
+            completion_status = "FAILED"
+
+        if completion_status:
+            update_session_log(completion_status, "visualizer" if completion_status == "COMPLETED" else "analyzer")
 
         print()
         print("output_lines")
