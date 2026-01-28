@@ -239,7 +239,7 @@ if user_input:
             try:
                 response = client_runtime.invoke_flow(
                     flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
-                    flowAliasIdentifier="EB7Q8SNTQR",
+                    flowAliasIdentifier="TMB156BOMW",
                     executionId=execution_id,
                     inputs=flow_inputs_existing,
                 )
@@ -261,7 +261,7 @@ if user_input:
             try:
                 response = client_runtime.invoke_flow(
                     flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
-                    flowAliasIdentifier="EB7Q8SNTQR",
+                    flowAliasIdentifier="TMB156BOMW",
                     inputs=flow_inputs_new,
                 )
                 execution_id = response["executionId"]
@@ -279,32 +279,17 @@ if user_input:
         output_lines = []
 
         completion_status = None
-        try:
-            for event in response.get("responseStream", []):
-                if "flowOutputEvent" in event:
-                    output_lines.append(event["flowOutputEvent"]["content"]["document"])
-                elif "flowMultiTurnInputRequestEvent" in event:
-                    output_lines.append(
-                        event["flowMultiTurnInputRequestEvent"]["content"]["document"]
-                    )
-                elif "flowCompletionEvent" in event:
-                    if event["flowCompletionEvent"]["completionReason"] == "SUCCESS":
-                        write_execution_id("")  # clear file on completion
-                        completion_status = "COMPLETED"
-        except EventStreamError as exc:
-            error_code = ""
-            error_message = ""
-            if hasattr(exc, "response"):
-                error_code = exc.response.get("Error", {}).get("Code", "")
-                error_message = exc.response.get("Error", {}).get("Message", "")
-            if error_code or error_message:
+        for event in response.get("responseStream", []):
+            if "flowOutputEvent" in event:
+                output_lines.append(event["flowOutputEvent"]["content"]["document"])
+            elif "flowMultiTurnInputRequestEvent" in event:
                 output_lines.append(
-                    f"Bedrock akış hatası: {error_code} {error_message}".strip()
+                    event["flowMultiTurnInputRequestEvent"]["content"]["document"]
                 )
-            else:
-                output_lines.append("Bedrock akış hatası: Yanıt alınamadı.")
-            write_execution_id("")
-            completion_status = "FAILED"
+            elif "flowCompletionEvent" in event:
+                if event["flowCompletionEvent"]["completionReason"] == "SUCCESS":
+                    write_execution_id("")  # clear file on completion
+                    completion_status = "COMPLETED"
 
         if completion_status:
             update_session_log(completion_status, "visualizer" if completion_status == "COMPLETED" else "analyzer")
