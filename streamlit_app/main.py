@@ -21,12 +21,14 @@ client_runtime = boto3.client("bedrock-agent-runtime", region_name="us-east-1", 
 SESSION_STATE_KEY = "execution_id"
 SESSION_LOG_KEY = "session_log"
 SESSION_USER_KEY = "session_user_id"
+SESSION_CUSTOM_ID_KEY = "session_id"
+ALIAS_ID = "WDSO2II0RX"
 
 
 def resolve_ddb_table_name():
     for key in ("DDB_TABLE_NAME", "SESSION_TABLE_NAME", "SESSION_LOG_TABLE"):
         try:
-            value = st.secrets.get(key)
+            value = "tcmb_evds_sessions"
         except Exception:
             value = None
         if not value:
@@ -54,6 +56,33 @@ def write_execution_id(execution_id):
     st.session_state[SESSION_STATE_KEY] = execution_id or ""
 
 
+def read_custom_session_id():
+    session_id = st.session_state.get(SESSION_CUSTOM_ID_KEY)
+    return session_id if session_id else None
+
+
+def write_custom_session_id(session_id):
+    st.session_state[SESSION_CUSTOM_ID_KEY] = session_id or ""
+
+
+def get_or_create_session_id():
+    session_id = read_custom_session_id()
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        write_custom_session_id(session_id)
+    return session_id
+
+
+def build_flow_input_content(user_input, session_id):
+    return {
+        "document":
+            {
+                "user_question": user_input,
+                "sessionID": session_id or "",
+            }
+    }
+
+
 def get_user_id():
     user_id = st.session_state.get(SESSION_USER_KEY)
     if not user_id:
@@ -62,30 +91,109 @@ def get_user_id():
     return user_id
 
 
-def start_session_log(user_query, status="IN_PROGRESS", last_node="analyzer"):
+def start_session_log(
+    user_query,
+    status="IN_PROGRESS",
+    last_node="analyzer",
+    session_id=None,
+    execution_id=None,
+):
     table = get_ddb_table()
     if not table:
+        st.warning("DynamoDB table name not configured; skipping log write.")
         return None
-    timestamp = int(time.time())
-    ttl = timestamp + 30 * 24 * 60 * 60
-    item = {
-        "userId": get_user_id(),
-        "timestamp": timestamp,
-        "status": status,
-        "last_node": last_node,
-        "user_query": user_query,
-        "ttl": ttl,
-    }
-    try:
-        table.put_item(Item=item)
-        st.session_state[SESSION_LOG_KEY] = {
-            "userId": item["userId"],
+    
+    timestamp_epoch = int(time.time())
+    timestamp = str(timestamp_epoch)
+    ttl = timestamp_epoch + 30 * 24 * 60 * 60
+    effective_execution_id = execution_id or session_id or str(uuid.uuid4())
+    
+    # Check if sessionID already exists
+    existing_item = None
+    if session_id:
+        try:
+            # Query by partition key (sessionId) to get the most recent item
+            response = table.query(
+                KeyConditionExpression='sessionId = :sid',
+                ExpressionAttributeValues={':sid': session_id},
+                ScanIndexForward=False,  # Sort descending by sort key
+                Limit=1
+            )
+            if response.get('Items'):
+                existing_item = response['Items'][0]
+        except ClientError as exc:
+            st.warning(f"Query failed: {exc}")
+            pass
+    
+    if existing_item:
+    # Update existing entry - append new query to user_query
+        try:
+            # Primary key is sessionId + executionId
+            key = {
+                'sessionId': existing_item['sessionId'],
+                'executionId': existing_item['executionId']
+            }
+            
+            # Get existing user_query and append new one
+            existing_query = existing_item.get('user_query', '')
+            updated_query = f"{existing_query}\n{user_query}" if existing_query else user_query
+            
+            table.update_item(
+                Key=key,
+                UpdateExpression="SET #status = :status, last_node = :last_node, user_query = :query, timestampEpoch = :ts_epoch, #ts = :ts, #ttl = :ttl",
+                ExpressionAttributeNames={
+                    "#status": "status",
+                    "#ts": "timestamp",
+                    "#ttl": "ttl"
+                },
+                ExpressionAttributeValues={
+                    ":status": status,
+                    ":last_node": last_node,
+                    ":query": updated_query,
+                    ":ts_epoch": timestamp_epoch,
+                    ":ts": timestamp,
+                    ":ttl": ttl
+                }
+            )
+            st.session_state[SESSION_LOG_KEY] = {
+                "userId": existing_item["userId"],
+                "timestamp": timestamp,
+                "ttl": ttl,
+                "executionId": existing_item["executionId"],
+            }
+            return existing_item
+        except ClientError as exc:
+            st.error(f"DynamoDB update failed: {exc}")
+            raise
+    else:
+        # Insert new entry
+        item = {
+            "userId": get_user_id(),
+            "executionId": effective_execution_id,
             "timestamp": timestamp,
+            "timestampEpoch": timestamp_epoch,
+            "status": status,
+            "last_node": last_node,
+            "user_query": user_query,
             "ttl": ttl,
         }
-        return item
-    except ClientError:
-        return None
+        if session_id:
+            item["sessionId"] = session_id
+            item["sessionID"] = session_id
+        if execution_id and execution_id != effective_execution_id:
+            item["flowExecutionId"] = execution_id
+        try:
+            table.put_item(Item=item)
+            st.session_state[SESSION_LOG_KEY] = {
+                "userId": item["userId"],
+                "timestamp": timestamp,
+                "ttl": ttl,
+                "executionId": item["executionId"],
+            }
+            return item
+        except ClientError as exc:
+            st.error(f"DynamoDB write failed: {exc}")
+            raise
 
 
 def update_session_log(status, last_node):
@@ -94,19 +202,37 @@ def update_session_log(status, last_node):
     if not table or not log_state:
         return
     try:
-        table.update_item(
-            Key={
-                "userId": log_state["userId"],
-                "timestamp": log_state["timestamp"],
-            },
-            UpdateExpression="SET #status = :status, last_node = :last_node, ttl = :ttl",
-            ExpressionAttributeNames={"#status": "status"},
-            ExpressionAttributeValues={
-                ":status": status,
-                ":last_node": last_node,
-                ":ttl": log_state["ttl"],
-            },
-        )
+        key_candidates = []
+        if log_state.get("userId") and log_state.get("executionId"):
+            key_candidates.append(
+                {"userId": log_state["userId"], "executionId": log_state["executionId"]}
+            )
+        if log_state.get("executionId") and log_state.get("timestamp") is not None:
+            key_candidates.append(
+                {"executionId": log_state["executionId"], "timestamp": log_state["timestamp"]}
+            )
+        if log_state.get("executionId"):
+            key_candidates.append({"executionId": log_state["executionId"]})
+        if log_state.get("userId") and log_state.get("timestamp") is not None:
+            key_candidates.append(
+                {"userId": log_state["userId"], "timestamp": log_state["timestamp"]}
+            )
+
+        for key in key_candidates:
+            try:
+                table.update_item(
+                    Key=key,
+                    UpdateExpression="SET #status = :status, last_node = :last_node, ttl = :ttl",
+                    ExpressionAttributeNames={"#status": "status"},
+                    ExpressionAttributeValues={
+                        ":status": status,
+                        ":last_node": last_node,
+                        ":ttl": log_state["ttl"],
+                    },
+                )
+                return
+            except ClientError:
+                continue
     except ClientError:
         return
 
@@ -187,10 +313,23 @@ def extract_image_payload(item):
 
 with st.sidebar:
     st.title("Configuration")
-    st.write("Session ID: " + read_execution_id() if read_execution_id() else "No active session")
+    st.write(
+        "Execution ID: " + read_execution_id()
+        if read_execution_id()
+        else "No active execution"
+    )
+    session_id_input = st.text_input(
+        "Custom Session ID",
+        value=read_custom_session_id() or "",
+        help="Optional. If set, it will be sent to the flow and stored in DynamoDB.",
+    )
+    if session_id_input != (read_custom_session_id() or ""):
+        write_custom_session_id(session_id_input.strip())
 
     st.title("Example Questions")
     st.write("26-01-2023'ten itibaren 1 yıllık ortalama aylık USD/TRY paritesini getir. Ham veri.")
+    st.write("Son bir yilda USD ile EUR arasindaki artisi goster")
+    st.write("daily istiyorum. percentage change olsun")
 
 st.title("EVDS Assistant")
 
@@ -212,9 +351,15 @@ if user_input:
 
     with st.spinner("Generating response..."):
         payload = user_input
-        start_session_log(user_input, status="IN_PROGRESS", last_node="analyzer")
-
         execution_id = read_execution_id()
+        session_id = get_or_create_session_id()
+        start_session_log(
+            user_input,
+            status="IN_PROGRESS",
+            last_node="analyzer",
+            session_id=session_id,
+            execution_id=execution_id,
+        )
 
         flow_inputs_existing = [
             {
@@ -225,7 +370,7 @@ if user_input:
         ]
         flow_inputs_new = [
             {
-                "content": {"document": user_input},
+                "content": build_flow_input_content(user_input, session_id),
                 "nodeName": "FlowInputNode",
                 "nodeOutputName": "document",
             }
@@ -239,7 +384,7 @@ if user_input:
             try:
                 response = client_runtime.invoke_flow(
                     flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
-                    flowAliasIdentifier="TMB156BOMW",
+                    flowAliasIdentifier=ALIAS_ID,
                     executionId=execution_id,
                     inputs=flow_inputs_existing,
                 )
@@ -261,7 +406,7 @@ if user_input:
             try:
                 response = client_runtime.invoke_flow(
                     flowIdentifier="arn:aws:bedrock:us-east-1:980088652213:flow/HMWETVTTZ2",
-                    flowAliasIdentifier="TMB156BOMW",
+                    flowAliasIdentifier=ALIAS_ID,
                     inputs=flow_inputs_new,
                 )
                 execution_id = response["executionId"]
